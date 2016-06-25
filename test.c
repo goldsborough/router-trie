@@ -11,13 +11,17 @@ int main(int argc, char const* argv[]) {
 	const Entry* entry;
 
 	RouterTrie rt;
-	default_gateway_input =
-			rt_create_default_gateway_input(rt_convert_ip("2001::1"), 0);
+	default_gateway_input = rt_create_default_gateway_input(
+			rt_convert_string_to_address("2001::1"), 0);
 
-	address.address = rt_convert_ip("b001:48:db8::1");
+	address.address = rt_convert_string_to_address("b001:48:db8::1");
 	address.interface = 1;
-	address.next_hop = rt_convert_ip("123:456::0");
+	address.next_hop = rt_convert_string_to_address("123:456::0");
 	address.prefix_length = 2;
+
+	char buffer[200];
+	rt_convert_address_to_string(address.address, buffer, sizeof buffer);
+	printf("%s\n", buffer);
 
 	rt_setup(&rt);
 

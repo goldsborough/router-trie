@@ -1,6 +1,7 @@
 #include <arpa/inet.h>
 #include <assert.h>
 #include <netinet/in.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 #include <stdio.h>
@@ -72,17 +73,46 @@ const Entry* rt_match(const RouterTrie* router_trie, const Address* address) {
 }
 
 /* Utility */
-Address rt_convert_ip(const char* address) {
-	struct in6_addr bytes;
+Address rt_convert_string_to_address(const char* address) {
+	in6_addr bytes;
 	if (inet_pton(AF_INET6, address, &bytes) == -1) {
-		perror("Could not convert IP address");
+		perror("Could not convert string to IP address");
 		exit(-1);
 	}
 
-	return rt_convert_in6_addr(&bytes);
+	return rt_convert_in6_addr_to_address(&bytes);
 }
 
-Address rt_convert_in6_addr(const struct in6_addr* ip) {
+char* rt_convert_address_to_string(Address address,
+																	 char* buffer,
+																	 size_t buffer_size) {
+	in6_addr bytes = rt_convert_address_to_in6_addr(address);
+
+	if (inet_ntop(AF_INET6, &bytes, buffer, buffer_size) == NULL) {
+		perror("Could not convert IP address to string");
+		exit(-1);
+	}
+
+	return buffer;
+}
+
+in6_addr rt_convert_address_to_in6_addr(Address address) {
+	in6_addr bytes;
+
+	for (int byte = 15; byte >= 8; --byte) {
+		bytes.s6_addr[byte] = address.lower & 0xff;
+		address.lower >>= 8;
+	}
+
+	for (int byte = 7; byte >= 0; --byte) {
+		bytes.s6_addr[byte] = address.upper & 0xff;
+		address.upper >>= 8;
+	}
+
+	return bytes;
+}
+
+Address rt_convert_in6_addr_to_address(const struct in6_addr* ip) {
 	Address address = {0, 0};
 
 	assert(ip != NULL);
@@ -114,16 +144,16 @@ uint8_t _rt_popcount(uint8_t value) {
 	return value;
 }
 
-void _rt_destroy_recursively(Node* node) {
+void _rt_destroy_recursively(RTNode* node) {
 	assert(node != NULL);
 	VECTOR_FOR_EACH(&node->next, iterator) {
-		_rt_destroy_recursively(ITERATOR_GET_AS(Node*, &iterator));
+		_rt_destroy_recursively(ITERATOR_GET_AS(RTNode*, &iterator));
 	}
 	_rt_destroy_node(node);
 }
 
-Node* _rt_create_node() {
-	Node* node;
+RTNode* _rt_create_node() {
+	RTNode* node;
 
 	if ((node = malloc(sizeof *node)) == NULL) {
 		return NULL;
@@ -131,14 +161,14 @@ Node* _rt_create_node() {
 
 	node->entry = NULL;
 	node->bitmap = 0;
-	if (vector_setup(&node->next, 0, sizeof(Node*)) == VECTOR_ERROR) {
+	if (vector_setup(&node->next, 0, sizeof(RTNode*)) == VECTOR_ERROR) {
 		return NULL;
 	}
 
 	return node;
 }
 
-int _rt_create_node_entry(Node* node, const Input* input) {
+int _rt_create_node_entry(RTNode* node, const Input* input) {
 	assert(node != NULL);
 	assert(input != NULL);
 
@@ -151,7 +181,7 @@ int _rt_create_node_entry(Node* node, const Input* input) {
 	return RT_SUCCESS;
 }
 
-void _rt_destroy_node(Node* node) {
+void _rt_destroy_node(RTNode* node) {
 	assert(node != NULL);
 
 	free(node->entry);
@@ -160,8 +190,8 @@ void _rt_destroy_node(Node* node) {
 	free(node);
 }
 
-Result _rt_insert(Node* node, const Input* input, size_t index) {
-	Node* next;
+Result _rt_insert(RTNode* node, const Input* input, size_t index) {
+	RTNode* next;
 	Result result = {NULL, RT_IGNORED, RT_SUCCESS};
 
 	if (node == NULL) {
@@ -194,8 +224,8 @@ Result _rt_insert(Node* node, const Input* input, size_t index) {
 	return result;
 }
 
-const Entry* _rt_match(Node* node, const Address* address, size_t index) {
-	Node* next;
+const Entry* _rt_match(RTNode* node, const Address* address, size_t index) {
+	RTNode* next;
 	const Entry* entry;
 
 	if (node == NULL) return NULL;
@@ -214,7 +244,8 @@ uint8_t _rt_get_bits(const Address* address, uint8_t index) {
 	}
 }
 
-Node* _rt_get_next(Node* node, const Address* address, uint8_t address_index) {
+RTNode*
+_rt_get_next(RTNode* node, const Address* address, uint8_t address_index) {
 	uint8_t next_index;
 	uint8_t address_bits;
 
@@ -225,13 +256,13 @@ Node* _rt_get_next(Node* node, const Address* address, uint8_t address_index) {
 
 	next_index = _rt_bitmap_to_index(node, address_bits);
 
-	return VECTOR_GET_AS(Node*, &node->next, next_index);
+	return VECTOR_GET_AS(RTNode*, &node->next, next_index);
 }
 
-int _rt_set_next(Node* node,
+int _rt_set_next(RTNode* node,
 								 const Address* address,
 								 uint8_t address_index,
-								 Node* next_node) {
+								 RTNode* next_node) {
 	uint8_t next_index;
 	uint8_t address_bits;
 
@@ -266,16 +297,16 @@ int _rt_set_next(Node* node,
 	return RT_SUCCESS;
 }
 
-void _rt_set_bitmap_value(Node* node, uint8_t index, bool value) {
+void _rt_set_bitmap_value(RTNode* node, uint8_t index, bool value) {
 	node->bitmap &= ~(1 << index);
 	node->bitmap |= (value << index);
 }
 
-uint8_t _rt_bitmap_to_index(Node* node, uint8_t index) {
+uint8_t _rt_bitmap_to_index(RTNode* node, uint8_t index) {
 	return popcount[node->bitmap & MSB_MASK_OF_N(index, 7)];
 }
 
-bool _rt_next_is_null(Node* node, uint8_t index) {
+bool _rt_next_is_null(RTNode* node, uint8_t index) {
 	return (node->bitmap & (1 << index)) == 0;
 }
 

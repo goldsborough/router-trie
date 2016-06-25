@@ -26,6 +26,7 @@
 
 typedef uint8_t interface_t;
 struct in6_addr;
+typedef struct in6_addr in6_addr;
 
 /******************* STRUCTURES ******************/
 
@@ -40,14 +41,14 @@ typedef struct Entry {
 	interface_t interface;
 } Entry;
 
-typedef struct Node {
+typedef struct RTNode {
 	Entry* entry;
 	uint8_t bitmap;
 	Vector next;
-} Node;
+} RTNode;
 
 typedef struct RouterTrie {
-	Node* root;
+	RTNode* root;
 	size_t size;
 } RouterTrie;
 
@@ -76,8 +77,13 @@ int rt_insert(RouterTrie* router_trie, const Input* input);
 const Entry* rt_match(const RouterTrie* router_trie, const Address* address);
 
 /* Utility */
-Address rt_convert_ip(const char* address);
-Address rt_convert_in6_addr(const struct in6_addr* ip);
+Address rt_convert_string_to_address(const char* address);
+char* rt_convert_address_to_string(Address address,
+																	 char* buffer,
+																	 size_t buffer_size);
+
+in6_addr rt_convert_address_to_in6_addr(Address address);
+Address rt_convert_in6_addr_to_address(const struct in6_addr* ip);
 
 /******************* PRIVATE ******************/
 
@@ -106,7 +112,7 @@ Address rt_convert_in6_addr(const struct in6_addr* ip);
 #define POPCOUNT_MASK3 0x0F
 
 typedef struct Result {
-	Node* node;
+	RTNode* node;
 	int inserted;
 	int error;
 } Result;
@@ -114,27 +120,28 @@ typedef struct Result {
 void _rt_setup_popcount();
 uint8_t _rt_popcount(uint8_t value);
 
-void _rt_destroy_recursively(Node* node);
+void _rt_destroy_recursively(RTNode* node);
 
-Node* _rt_create_node();
-int _rt_create_node_entry(Node* node, const Input* input);
-void _rt_destroy_node(Node* node);
+RTNode* _rt_create_node();
+int _rt_create_node_entry(RTNode* node, const Input* input);
+void _rt_destroy_node(RTNode* node);
 
-Result _rt_insert(Node* node, const Input* input, size_t index);
-const Entry* _rt_match(Node* node, const Address* address, size_t index);
+Result _rt_insert(RTNode* node, const Input* input, size_t index);
+const Entry* _rt_match(RTNode* node, const Address* address, size_t index);
 
 uint8_t _rt_get_bits(const Address* address, uint8_t index);
 
-Node* _rt_get_next(Node* node, const Address* address, uint8_t address_index);
-int _rt_set_next(Node* node,
+RTNode*
+_rt_get_next(RTNode* node, const Address* address, uint8_t address_index);
+int _rt_set_next(RTNode* node,
 								 const Address* address,
 								 uint8_t address_index,
-								 Node* next_node);
+								 RTNode* next_node);
 
-uint8_t _rt_bitmap_to_index(Node* node, uint8_t index);
+uint8_t _rt_bitmap_to_index(RTNode* node, uint8_t index);
 
-bool _rt_next_is_null(Node* node, uint8_t index);
-void _rt_set_bitmap_value(Node* node, uint8_t index, bool value);
+bool _rt_next_is_null(RTNode* node, uint8_t index);
+void _rt_set_bitmap_value(RTNode* node, uint8_t index, bool value);
 
 void _rt_store_input_in_entry(Entry* entry, const Input* input);
 
