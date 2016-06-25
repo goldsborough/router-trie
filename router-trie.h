@@ -91,6 +91,7 @@ Address rt_convert_in6_addr_to_address(const struct in6_addr* ip);
 #define MASK_OF_N(N) ((1 << (N)) - 1)
 #define SHIFT_COUNT(size, index) (size - index)
 #define MSB_MASK_OF_N(N, size) (MASK_OF_N(N) << SHIFT_COUNT(size, N))
+#define REVERSE_INDEX(size, index) (1 << SHIFT_COUNT(size, index))
 
 #define PREFIX_DISTANCE(prefix_length_in_bits) \
 	((prefix_length_in_bits / RT_ARITY) + 1)

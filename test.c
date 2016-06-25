@@ -29,6 +29,8 @@ int main(int argc, char const* argv[]) {
 	address.next_hop = rt_convert_string_to_address("::2");
 	address.prefix_length = 64;
 
+	rt_insert(&rt, &address);
+
 	address.address = rt_convert_string_to_address("2a00:1450:4001:817::2003");
 
 	entry = rt_match(&rt, &address.address);

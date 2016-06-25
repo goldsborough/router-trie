@@ -17,6 +17,11 @@ void rt_setup(RouterTrie* router_trie) {
 
 	router_trie->root = _rt_create_node();
 	router_trie->size = 0;
+
+	/* Popcount of 1 should be 1, so we know when to initialize. */
+	if (popcount[1] == 0) {
+		_rt_setup_popcount();
+	}
 }
 
 void rt_destroy(RouterTrie* router_trie) {
@@ -276,6 +281,18 @@ int _rt_set_next(RTNode* node,
 	address_bits = _rt_get_bits(address, address_index);
 	next_index = _rt_bitmap_to_index(node, address_bits);
 
+	// printf(
+	// 		"Inserting %d at %d on level %d for %llx w bitmap %d at popcount of %d,
+	// "
+	// 		"which is %d\n",
+	// 		address_bits,
+	// 		next_index,
+	// 		address_index,
+	// 		address->upper,
+	// 		node->bitmap,
+	// 		node->bitmap & MSB_MASK_OF_N(address_bits, 8),
+	// 		popcount[popcount[node->bitmap & MSB_MASK_OF_N(address_bits, 8)]]);
+
 	if (_rt_next_is_null(node, address_bits)) {
 		if (next_node != NULL) {
 			if (vector_insert(&node->next, next_index, &next_node) == VECTOR_ERROR) {
@@ -303,16 +320,16 @@ int _rt_set_next(RTNode* node,
 }
 
 void _rt_set_bitmap_value(RTNode* node, uint8_t index, bool value) {
-	node->bitmap &= ~(1 << index);
-	node->bitmap |= (value << index);
+	node->bitmap &= ~REVERSE_INDEX(7, index);
+	node->bitmap |= (value << SHIFT_COUNT(7, index));
 }
 
 uint8_t _rt_bitmap_to_index(RTNode* node, uint8_t index) {
-	return popcount[node->bitmap & MSB_MASK_OF_N(index, 7)];
+	return popcount[node->bitmap & MSB_MASK_OF_N(index, 8)];
 }
 
 bool _rt_next_is_null(RTNode* node, uint8_t index) {
-	return (node->bitmap & (1 << index)) == 0;
+	return (node->bitmap & REVERSE_INDEX(7, index)) == 0;
 }
 
 void _rt_store_input_in_entry(Entry* entry, const Input* input) {
