@@ -98,13 +98,14 @@ char* rt_convert_address_to_string(Address address,
 
 in6_addr rt_convert_address_to_in6_addr(Address address) {
 	in6_addr bytes;
+	int byte;
 
-	for (int byte = 15; byte >= 8; --byte) {
+	for (byte = 15; byte >= 8; --byte) {
 		bytes.s6_addr[byte] = address.lower & 0xff;
 		address.lower >>= 8;
 	}
 
-	for (int byte = 7; byte >= 0; --byte) {
+	for (byte = 7; byte >= 0; --byte) {
 		bytes.s6_addr[byte] = address.upper & 0xff;
 		address.upper >>= 8;
 	}
@@ -114,14 +115,15 @@ in6_addr rt_convert_address_to_in6_addr(Address address) {
 
 Address rt_convert_in6_addr_to_address(const struct in6_addr* ip) {
 	Address address = {0, 0};
+	size_t byte;
 
 	assert(ip != NULL);
 
-	for (size_t byte = 0; byte < 8; ++byte) {
+	for (byte = 0; byte < 8; ++byte) {
 		address.lower |= ((uint64_t)ip->s6_addr[15 - byte]) << (byte * 8);
 	}
 
-	for (size_t byte = 0; byte < 8; ++byte) {
+	for (byte = 0; byte < 8; ++byte) {
 		address.upper |= ((uint64_t)ip->s6_addr[7 - byte]) << (byte * 8);
 	}
 
@@ -131,7 +133,8 @@ Address rt_convert_in6_addr_to_address(const struct in6_addr* ip) {
 /******************* PRIVATE ******************/
 
 void _rt_setup_popcount() {
-	for (size_t value = 0; value < 256; ++value) {
+	size_t value;
+	for (value = 0; value < 256; ++value) {
 		popcount[value] = _rt_popcount(value);
 	}
 }
@@ -145,8 +148,10 @@ uint8_t _rt_popcount(uint8_t value) {
 }
 
 void _rt_destroy_recursively(RTNode* node) {
+	Iterator iterator = vector_begin(&node->next);
+	Iterator end = vector_end(&node->next);
 	assert(node != NULL);
-	VECTOR_FOR_EACH(&node->next, iterator) {
+	for (; !iterator_equals(&iterator, &end); iterator_increment(&iterator)) {
 		_rt_destroy_recursively(ITERATOR_GET_AS(RTNode*, &iterator));
 	}
 	_rt_destroy_node(node);
