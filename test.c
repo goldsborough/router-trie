@@ -11,33 +11,28 @@ int main(int argc, char const* argv[]) {
 	const Entry* entry;
 
 	RouterTrie rt;
-	default_gateway_input = rt_create_default_gateway_input(
-			rt_convert_string_to_address("2001::1"), 0);
+	// default_gateway_input = rt_create_default_gateway_input(
+	// 		rt_convert_string_to_address("2001::1"), 0);
 
-	address.address = rt_convert_string_to_address("b001:48:db8::1");
+	address.address = rt_convert_string_to_address("2a00:1450:4001:817::0");
 	address.interface = 1;
-	address.next_hop = rt_convert_string_to_address("123:456::0");
-	address.prefix_length = 2;
-
-	char buffer[200];
-	rt_convert_address_to_string(address.address, buffer, sizeof buffer);
-	printf("%s\n", buffer);
+	address.next_hop = rt_convert_string_to_address("::1");
+	address.prefix_length = 64;
 
 	rt_setup(&rt);
+	// rt_default_gateway(&rt, &default_gateway_input);
 
-	rt_default_gateway(&rt, &default_gateway_input);
+	rt_insert(&rt, &address);
 
-	for (int i = 1; i < 100; ++i) {
-		address.address.upper++;
-		address.interface = i;
-		rt_insert(&rt, &address);
-	}
+	address.address = rt_convert_string_to_address("2aff:1450:4001:817::0");
+	address.interface = 2;
+	address.next_hop = rt_convert_string_to_address("::2");
+	address.prefix_length = 64;
 
-	address.address.upper = 0xb001480000000000;
-	address.address.lower = 4526563456;
+	address.address = rt_convert_string_to_address("2a00:1450:4001:817::2003");
 
 	entry = rt_match(&rt, &address.address);
-	printf("%d\n", entry->prefix_length);
+	printf("%d\n", entry->interface);
 
 	rt_destroy(&rt);
 	return 0;
