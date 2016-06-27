@@ -259,7 +259,7 @@ Result _rt_insert(RTNode* node, const Input* input, size_t index) {
 const Entry* _rt_match(RTNode* node, const Address* address, size_t index) {
 	uint8_t precision;
 	RTNode* next;
-	const Entry* entry;
+	const Entry* entry = NULL;
 
 	for (precision = RT_ARITY; precision > 0; --precision) {
 		next = _rt_get_next_with_precision(node, address, index, precision);
