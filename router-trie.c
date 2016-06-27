@@ -259,15 +259,16 @@ Result _rt_insert(RTNode* node, const Input* input, size_t index) {
 const Entry* _rt_match(RTNode* node, const Address* address, size_t index) {
 	uint8_t precision;
 	RTNode* next;
+	const Entry* entry;
 
 	for (precision = RT_ARITY; precision > 0; --precision) {
 		next = _rt_get_next_with_precision(node, address, index, precision);
 		if (next) {
-			return _rt_match(next, address, index + 1);
+			if ((entry = _rt_match(next, address, index + 1)) != NULL) break;
 		}
 	}
 
-	return node->entry;
+	return entry ? entry : node->entry;
 }
 
 uint8_t _rt_get_bits(const Address* address, uint8_t index) {
