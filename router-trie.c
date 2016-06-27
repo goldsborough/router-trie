@@ -257,16 +257,17 @@ Result _rt_insert(RTNode* node, const Input* input, size_t index) {
 }
 
 const Entry* _rt_match(RTNode* node, const Address* address, size_t index) {
+	uint8_t precision;
 	RTNode* next;
-	const Entry* entry;
 
-	if (node == NULL) {
-		return NULL;
+	for (precision = RT_ARITY; precision > 0; --precision) {
+		next = _rt_get_next_with_precision(node, address, index, precision);
+		if (next) {
+			return _rt_match(next, address, index + 1);
+		}
 	}
-	next = _rt_get_next(node, address, index);
-	entry = _rt_match(next, address, index + 1);
 
-	return entry ? entry : node->entry;
+	return node->entry;
 }
 
 uint8_t _rt_get_bits(const Address* address, uint8_t index) {
@@ -283,12 +284,21 @@ uint8_t _rt_get_bits(const Address* address, uint8_t index) {
 
 RTNode*
 _rt_get_next(RTNode* node, const Address* address, uint8_t address_index) {
+	return _rt_get_next_with_precision(node, address, address_index, RT_ARITY);
+}
+
+RTNode* _rt_get_next_with_precision(RTNode* node,
+																		const Address* address,
+																		uint8_t address_index,
+																		uint8_t precision) {
 	uint8_t next_index;
 	uint8_t address_bits;
 
 	assert(node != NULL);
 
 	address_bits = _rt_get_bits(address, address_index);
+	address_bits &= MSB_MASK_OF_N(precision, RT_ARITY);
+
 	if (_rt_next_is_null(node, address_bits)) return NULL;
 
 	next_index = _rt_bitmap_to_index(node, address_bits);

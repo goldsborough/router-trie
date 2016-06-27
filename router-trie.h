@@ -93,8 +93,9 @@ Address rt_convert_in6_addr_to_address(const struct in6_addr* ip);
 #define MSB_MASK_OF_N(N, size) (MASK_OF_N(N) << SHIFT_COUNT(size, N))
 #define REVERSE_INDEX(size, index) (1ULL << SHIFT_COUNT(size, index))
 
-#define CEIL(value) \
-	((uint64_t)(((value) == ((int)(value))) ? (value) : ((int)(value) + 1)))
+#define CEIL(value)                                     \
+	(((value) == ((uint64_t)(value))) ? (uint64_t)(value) \
+																		: ((uint64_t)(value) + 1))
 
 #define PREFIX_DISTANCE(prefix_length_in_bits) \
 	CEIL(prefix_length_in_bits / (double)RT_ARITY)
@@ -138,6 +139,10 @@ uint8_t _rt_get_bits(const Address* address, uint8_t index);
 
 RTNode*
 _rt_get_next(RTNode* node, const Address* address, uint8_t address_index);
+RTNode* _rt_get_next_with_precision(RTNode* node,
+																		const Address* address,
+																		uint8_t address_index,
+																		uint8_t precision);
 int _rt_set_next(RTNode* node,
 								 const Address* address,
 								 uint8_t address_index,
