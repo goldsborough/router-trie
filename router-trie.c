@@ -41,9 +41,11 @@ Input rt_create_default_gateway_input(Address next_hop, interface_t interface) {
 }
 
 /* Access */
-int rt_default_gateway(RouterTrie* router_trie, const Input* input) {
+int rt_default_gateway(RouterTrie* router_trie, Input* input) {
 	assert(router_trie != NULL);
 	assert(input != NULL);
+
+	_rt_sanitize(input);
 
 	if (router_trie->root->entry == NULL) {
 		if (_rt_create_node_entry(router_trie->root, input) == RT_ERROR) {
@@ -57,10 +59,16 @@ int rt_default_gateway(RouterTrie* router_trie, const Input* input) {
 	return RT_SUCCESS;
 }
 
-int rt_insert(RouterTrie* router_trie, const Input* input) {
+int rt_insert(RouterTrie* router_trie, Input* input) {
 	Result result;
 	assert(router_trie != NULL);
 	assert(input != NULL);
+
+	_rt_sanitize(input);
+
+	if (_rt_is_default_gateway(input)) {
+		return rt_default_gateway(router_trie, input);
+	}
 
 	result = _rt_insert(router_trie->root, input, 0);
 
@@ -80,8 +88,8 @@ const Entry* rt_match(const RouterTrie* router_trie, const Address* address) {
 /* Utility */
 Address rt_convert_string_to_address(const char* address) {
 	in6_addr bytes;
-	if (inet_pton(AF_INET6, address, &bytes) == -1) {
-		perror("Could not convert string to IP address");
+	if (inet_pton(AF_INET6, address, &bytes) != 1) {
+		fprintf(stderr, "Could not convert string to IP address\n");
 		exit(-1);
 	}
 
@@ -136,6 +144,19 @@ Address rt_convert_in6_addr_to_address(const struct in6_addr* ip) {
 }
 
 /******************* PRIVATE ******************/
+
+void _rt_sanitize(Input* input) {
+	// Make sure we only insert the network address
+	if (input->prefix_length > 64) {
+		input->address.lower &= MSB_MASK_OF_N(input->prefix_length - 64, 64);
+	} else {
+		input->address.upper &= MSB_MASK_OF_N(input->prefix_length, 64);
+	}
+}
+
+bool _rt_is_default_gateway(Input* input) {
+	return input->address.upper == 0 && input->address.lower == 0;
+}
 
 void _rt_setup_popcount() {
 	size_t value;

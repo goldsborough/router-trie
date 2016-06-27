@@ -71,8 +71,8 @@ void rt_destroy(RouterTrie* router_trie);
 Input rt_create_default_gateway_input(Address next_hop, interface_t interface);
 
 /* Access */
-int rt_default_gateway(RouterTrie* router_trie, const Input* input);
-int rt_insert(RouterTrie* router_trie, const Input* input);
+int rt_default_gateway(RouterTrie* router_trie, Input* input);
+int rt_insert(RouterTrie* router_trie, Input* input);
 
 const Entry* rt_match(const RouterTrie* router_trie, const Address* address);
 
@@ -88,10 +88,10 @@ Address rt_convert_in6_addr_to_address(const struct in6_addr* ip);
 /******************* PRIVATE ******************/
 
 #define BIT_SIZE(thing) (sizeof(thing) * 8)
-#define MASK_OF_N(N) ((1 << (N)) - 1)
+#define MASK_OF_N(N) ((1ULL << (N)) - 1)
 #define SHIFT_COUNT(size, index) (size - index)
 #define MSB_MASK_OF_N(N, size) (MASK_OF_N(N) << SHIFT_COUNT(size, N))
-#define REVERSE_INDEX(size, index) (1 << SHIFT_COUNT(size, index))
+#define REVERSE_INDEX(size, index) (1ULL << SHIFT_COUNT(size, index))
 
 #define PREFIX_DISTANCE(prefix_length_in_bits) \
 	((prefix_length_in_bits / RT_ARITY) + 1)
@@ -117,6 +117,9 @@ typedef struct Result {
 	int inserted;
 	int error;
 } Result;
+
+void _rt_sanitize(Input* input);
+bool _rt_is_default_gateway(Input* input);
 
 void _rt_setup_popcount();
 uint8_t _rt_popcount(uint8_t value);
