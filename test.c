@@ -18,19 +18,20 @@ int main(int argc, char const* argv[]) {
 	rt_setup(&rt);
 	// rt_default_gateway(&rt, &default_gateway_input);
 
-	address.prefix_length = 128;
 
+	address.prefix_length = 32;
 	address.interface = 1;
-	address.next_hop = rt_convert_string_to_address("::1");
-	address.address = rt_convert_string_to_address("dead:beef::1");
-	rt_insert(&rt, &address);
-
-	address.interface = 2;
 	address.next_hop = rt_convert_string_to_address("::2");
-	address.address = rt_convert_string_to_address("dead:beef::2");
+	address.address = rt_convert_string_to_address("dead:beef:ffff::0");
 	rt_insert(&rt, &address);
 
-	address.address = rt_convert_string_to_address("dead:beef::1");
+	address.prefix_length = 24;
+	address.interface = 2;
+	address.next_hop = rt_convert_string_to_address("::3");
+	address.address = rt_convert_string_to_address("dead:be00::0");
+	rt_insert(&rt, &address);
+
+	address.address = rt_convert_string_to_address("dead:beef:FF00::1");
 
 	entry = rt_match(&rt, &address.address);
 	printf("%d\n", entry ? entry->interface : 0);

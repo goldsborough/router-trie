@@ -151,6 +151,7 @@ void _rt_sanitize(Input* input) {
 		input->address.lower &= MSB_MASK_OF_N(input->prefix_length - 64, 64);
 	} else if (input->prefix_length < 64) {
 		input->address.upper &= MSB_MASK_OF_N(input->prefix_length, 64);
+		input->address.lower = 0;
 	}
 }
 
@@ -259,7 +260,9 @@ const Entry* _rt_match(RTNode* node, const Address* address, size_t index) {
 	RTNode* next;
 	const Entry* entry;
 
-	if (node == NULL) return NULL;
+	if (node == NULL) {
+		return NULL;
+	}
 	next = _rt_get_next(node, address, index);
 	entry = _rt_match(next, address, index + 1);
 
