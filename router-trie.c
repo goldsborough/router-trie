@@ -147,9 +147,9 @@ Address rt_convert_in6_addr_to_address(const struct in6_addr* ip) {
 
 void _rt_sanitize(Input* input) {
 	// Make sure we only insert the network address
-	if (input->prefix_length > 64) {
+	if (input->prefix_length > 64 && input->prefix_length < 128) {
 		input->address.lower &= MSB_MASK_OF_N(input->prefix_length - 64, 64);
-	} else {
+	} else if (input->prefix_length < 64) {
 		input->address.upper &= MSB_MASK_OF_N(input->prefix_length, 64);
 	}
 }
@@ -268,10 +268,13 @@ const Entry* _rt_match(RTNode* node, const Address* address, size_t index) {
 
 uint8_t _rt_get_bits(const Address* address, uint8_t index) {
 	assert(address != NULL);
+
 	if (index < MIDDLE_INDEX) {
 		return GRAB_UPPER_BITS(address->upper, index);
+	} else if (index < LAST_INDEX) {
+		return GRAB_UPPER_BITS(address->lower, index - MIDDLE_INDEX);
 	} else {
-		return GRAB_UPPER_BITS(address->lower, index);
+		return (address->lower & MASK_OF_N(2)) << 1;
 	}
 }
 

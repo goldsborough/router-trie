@@ -96,14 +96,12 @@ Address rt_convert_in6_addr_to_address(const struct in6_addr* ip);
 #define PREFIX_DISTANCE(prefix_length_in_bits) \
 	((prefix_length_in_bits / RT_ARITY) + 1)
 #define INDEX_MASK ((uint64_t)MASK_OF_N(RT_ARITY))
-#define LAST_INDEX 43 /* ceil(128/3) */
+#define LAST_INDEX 42 /* ceil(128/3) */
 #define MIDDLE_INDEX 21
 
 #define ARITY_INDEX(index) (((index) + 1) * RT_ARITY)
-#define ADDRESS_SHIFT(index) \
-	(SHIFT_COUNT(BIT_SIZE(uint64_t), ARITY_INDEX((index))))
-#define ADDRESS_INDEX_MASK(index) \
-	((uint64_t)MASK_OF_N(RT_ARITY)) << ADDRESS_SHIFT(index)
+#define ADDRESS_SHIFT(index) (SHIFT_COUNT(64, ARITY_INDEX((index))))
+#define ADDRESS_INDEX_MASK(index) (MASK_OF_N(RT_ARITY)) << ADDRESS_SHIFT(index)
 #define GRAB_UPPER_BITS(value, index) \
 	((value)&ADDRESS_INDEX_MASK(index)) >> ADDRESS_SHIFT(index)
 
