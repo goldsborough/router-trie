@@ -93,10 +93,11 @@ Address rt_convert_in6_addr_to_address(const struct in6_addr* ip);
 #define MSB_MASK_OF_N(N, size) (MASK_OF_N(N) << SHIFT_COUNT(size, N))
 #define REVERSE_INDEX(size, index) (1ULL << SHIFT_COUNT(size, index))
 
-#define CEIL(value) ((value) == ((int)(value)) ? (value) : ((int)(value) + 1))
+#define CEIL(value) \
+	((uint64_t)(((value) == ((int)(value))) ? (value) : ((int)(value) + 1)))
 
 #define PREFIX_DISTANCE(prefix_length_in_bits) \
-	CEIL(prefix_length_in_bits / RT_ARITY)
+	CEIL(prefix_length_in_bits / (double)RT_ARITY)
 #define INDEX_MASK ((uint64_t)MASK_OF_N(RT_ARITY))
 #define LAST_INDEX 42 /* ceil(128/3) */
 #define MIDDLE_INDEX 21

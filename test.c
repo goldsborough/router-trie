@@ -31,7 +31,7 @@ int main(int argc, char const* argv[]) {
 	address.address = rt_convert_string_to_address("dead:be00::0");
 	rt_insert(&rt, &address);
 
-	address.address = rt_convert_string_to_address("dead:beef:FF00::1");
+	address.address = rt_convert_string_to_address("dead:beee::1");
 
 	entry = rt_match(&rt, &address.address);
 	printf("%d\n", entry ? entry->interface : 0);
