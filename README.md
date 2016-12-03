@@ -1,3 +1,1 @@
 # Router Trie
-
-Currently WIP.
